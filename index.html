@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Emoji Draw Board</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f2f2f2;
+        text-align: center;
+        margin: 0;
+        padding: 15px;
+        touch-action: none;
+    }
+
+    h2 {
+        margin-bottom: 10px;
+    }
+
+    .controls {
+        margin-bottom: 15px;
+    }
+
+    button {
+        padding: 10px 15px;
+        margin: 5px;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    #board {
+        width: 90vw;
+        max-width: 800px;
+        height: 60vh;
+        max-height: 500px;
+        background: white;
+        border: 2px dashed #aaa;
+        margin: auto;
+        position: relative;
+        overflow: hidden;
+        touch-action: none;
+    }
+
+    .emoji {
+        position: absolute;
+        font-size: 40px;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+    }
+
+    .emoji.selected {
+        outline: 2px dashed black;
+    }
+</style>
+</head>
+
+<body>
+
+<h2>🎨 Emoji Drawing Board</h2>
+
+<div class="controls">
+    <button onclick="addRandomEmoji()">Add Random Emoji</button>
+    <button onclick="deleteSelectedEmoji()">Delete Selected Emoji</button>
+    <button onclick="downloadImage()">Download Image</button>
+</div>
+
+<div id="board"></div>
+
+<script>
+const board = document.getElementById("board");
+
+const emojis = [
+    "😀","😂","😍","🥲","😎","🤯","😡","🤖","👻","🎃",
+    "🔥","🌈","⭐","🌙","☀️","🍎","🍕","🍩","🎈","❤️"
+];
+
+let activeEmoji = null;
+let selectedEmoji = null;
+let offsetX = 0;
+let offsetY = 0;
+
+function addRandomEmoji() {
+    const emoji = document.createElement("div");
+    emoji.className = "emoji";
+    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+    emoji.style.left = Math.random() * (board.clientWidth - 50) + "px";
+    emoji.style.top = Math.random() * (board.clientHeight - 50) + "px";
+
+    emoji.addEventListener("mousedown", startDrag);
+    emoji.addEventListener("touchstart", startDrag, { passive: false });
+
+    emoji.addEventListener("click", () => selectEmoji(emoji));
+
+    board.appendChild(emoji);
+}
+
+function selectEmoji(emoji) {
+    document.querySelectorAll(".emoji").forEach(el => el.classList.remove("selected"));
+    selectedEmoji = emoji;
+    emoji.classList.add("selected");
+}
+
+function startDrag(e) {
+    e.preventDefault();
+    activeEmoji = e.target;
+    selectEmoji(activeEmoji);
+
+    const rect = activeEmoji.getBoundingClientRect();
+    const point = e.touches ? e.touches[0] : e;
+
+    offsetX = point.clientX - rect.left;
+    offsetY = point.clientY - rect.top;
+}
+
+document.addEventListener("mousemove", dragEmoji);
+document.addEventListener("touchmove", dragEmoji, { passive: false });
+
+function dragEmoji(e) {
+    if (!activeEmoji) return;
+    e.preventDefault();
+
+    const boardRect = board.getBoundingClientRect();
+    const point = e.touches ? e.touches[0] : e;
+
+    let x = point.clientX - boardRect.left - offsetX;
+    let y = point.clientY - boardRect.top - offsetY;
+
+    x = Math.max(0, Math.min(board.clientWidth - 40, x));
+    y = Math.max(0, Math.min(board.clientHeight - 40, y));
+
+    activeEmoji.style.left = x + "px";
+    activeEmoji.style.top = y + "px";
+}
+
+document.addEventListener("mouseup", stopDrag);
+document.addEventListener("touchend", stopDrag);
+
+function stopDrag() {
+    activeEmoji = null;
+}
+
+function deleteSelectedEmoji() {
+    if (selectedEmoji) {
+        selectedEmoji.remove();
+        selectedEmoji = null;
+    }
+}
+
+function downloadImage() {
+    html2canvas(board).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "emoji-drawing.png";
+        link.href = canvas.toDataURL();
+        link.click();
+    });
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+</body>
+</html>
